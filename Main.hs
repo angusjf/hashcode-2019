@@ -20,7 +20,7 @@ toImages :: [String] -> [Image]
 toImages = zipWith toImage [0..]
 
 toSlides :: [Image] -> [Slide]
-toSlides images = (map HSlide his) ++ (map VSlide vis)
+toSlides images = map HSlide his ++ map VSlide vis
   where 
     his = filter horizontal images
     vis = pairUp $ filter (not . horizontal) images
@@ -29,7 +29,7 @@ arrange :: [Slide] -> [Slide]
 arrange [x] = [x]
 arrange (x:xs) = x : arrange rest
   where
-    rest = match : (without match xs)
+    rest = match : without match xs
     match = bestMatch x xs
 
 toImage :: Int -> String -> Image
@@ -37,10 +37,10 @@ toImage index s = Image index (orientation == "H") tags
   where (orientation:_:tags) = words s
 
 without :: (Eq a) => a -> [a] -> [a]
-without n xs = filter (\i -> i /= n) xs
+without n = filter (/= n)
 
 bestMatch :: Slide -> [Slide] -> Slide
-bestMatch candidate list = maximumBy (compareSlides candidate) list
+bestMatch candidate = maximumBy (compareSlides candidate)
 
 compareSlides :: Slide -> Slide -> Slide -> Ordering
 compareSlides s a b = compare (getScore s a) (getScore s b)
@@ -50,18 +50,18 @@ getScore a b = min3 (length atags) (length btags) (length bothtags)
   where
     atags = getTags a
     btags = getTags b
-    bothtags = intersect atags btags
-    min3 x y z = min (min x y) z
+    bothtags = atags `intersect` btags
+    min3 x y = min (min x y)
 
 getTags :: Slide -> [Tag]
 getTags (HSlide i) = tags i
-getTags (VSlide (a, b)) = union (tags a) (tags b)
+getTags (VSlide (a, b)) = tags a `union` tags b
 
 instance Show Slide where
     show (HSlide (Image i _ _)) = show i
-    show (VSlide ((Image ai _ _), (Image bi _ _))) = show ai ++ " " ++ show bi
+    show (VSlide (Image ai _ _, Image bi _ _)) = show ai ++ " " ++ show bi
 
 pairUp :: [a] -> [(a, a)]
 pairUp [] = []
-pairUp (x:y:xs) = (x, y) : pairUp(xs)
-pairUp (x:[]) = error "odd input array length"
+pairUp (x:y:xs) = (x, y) : pairUp xs
+pairUp [x] = error "odd input array length"
